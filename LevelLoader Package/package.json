@@ -1,0 +1,25 @@
+{
+    "author": {
+        "email": "eric.kirschstein@gmail.com",
+        "name": "Eric Kirschstein",
+        "url": ""
+    },
+    "dependencies": {
+        "com.unity.modules.physics": "1.0.0",
+		"com.unity.addressables": "1.8.5"
+    },
+	
+    "description": "A small level asset loader by using addressables.",
+    "displayName": "Level Asset Loader",
+    "documentation": "",
+    "keywords": [
+        "level",
+        "loader",
+        "addressable",
+        "runtime"
+    ],
+    "name": "com.level.loader",
+    "unity": "2019.4",
+    "unityRelease": "8f1",
+    "version": "1.0.0"
+}
