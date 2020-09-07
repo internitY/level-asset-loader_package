@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -21,31 +22,18 @@ namespace Agent.AssetLoader
 
         [Header("Assets")]
         [SerializeField] private List<AssetData> loadableAssets = new List<AssetData>();
+        [SerializeField] private List<LoadReference> currentlyLoadedInstances = new List<LoadReference>();
 
-        [SerializeField] private List<AssetData> currentlyLoadedAssets = new List<AssetData>();
+        [System.Serializable]
+        public struct LoadReference
+        {
+            public AssetReference assetReference;
+            public GameObject instance;
+        }
 
         [Header("Debug")]
         [SerializeField] private bool enableDebug = false;
         [SerializeField] private bool enableDeepDebug = false;
-
-
-        [System.Serializable]
-        private struct AssetData
-        {
-            [Tooltip("The Addressable Reference. Tip: Be sure that your level prefab is marked as addressable. If NULL the level loader will return an error.")]
-            public AssetReferenceGameObject assetRef;
-
-            [Tooltip("The transform this level asset will be parented. If null, it will be instantiated in the root of the scene.")]
-            public Transform parentTarget;
-
-            [Tooltip("This transform will be used to get the instantiation position. It is more handy to use a transform instead of a vector3 to work in your scene. If this component is null, the level loader will return an error.")]
-            public Transform positionTarget;
-
-            [Tooltip("This is the gameobject reference when the asset was loaded.")]
-            public GameObject sceneObjectReference;
-
-            public string name;
-        }
         #endregion
 
         #region unity loop
@@ -84,12 +72,12 @@ namespace Agent.AssetLoader
             if (enableDeepDebug)
                 Debug.Log("TriggerEnter noticed: >" + col.name + "<");
 
+            if (loadableAssets.Count <= 0)
+                return;
+
             if (LayerMaskContainsLayer(collidableLayers, col.gameObject.layer))
             {
-                for (int i = 0; i < loadableAssets.Count; i++)
-                {
-                    LoadAsset(loadableAssets[i]);
-                }
+                LoadAllAssets();
             }
             else
             {
@@ -103,18 +91,19 @@ namespace Agent.AssetLoader
             if(enableDeepDebug)
                 Debug.Log("TriggerExit noticed: >" + col.name + "<");
 
-            if (currentlyLoadedAssets.Count <= 0)
+            if (currentlyLoadedInstances.Count <= 0)
+            {
+                if (enableDeepDebug)
+                    Debug.Log("No currently loaded assets to unload.");
                 return;
+            }
 
             if (!unloadWhenTriggerExit)
                 return;
 
             if (LayerMaskContainsLayer(collidableLayers, col.gameObject.layer))
             {
-                for (int i = 0; i < currentlyLoadedAssets.Count; i++)
-                {
-                    UnloadAsset(currentlyLoadedAssets[i]);
-                }
+                UnloadAllAssets();
             }
             else
             {
@@ -125,108 +114,146 @@ namespace Agent.AssetLoader
         #endregion
 
         #region loading methods
-        private void LoadAsset(AssetData _asset)
+        /// <summary>
+        /// Loads all registered asset references inside the loadableAssets list. Currently this only works while application is running.
+        /// </summary>
+        public void LoadAllAssets()
         {
-            if (_asset.assetRef == null)
+            if (loadableAssets.Count <= 0)
             {
-                if (enableDebug)
-                    Debug.LogError("Tried to load asset wihtout addressable reference.");
+                if(enableDebug)
+                    Debug.LogWarning("No loadable assets found. Loading returned");
                 return;
             }
 
-            if (enableDeepDebug)
-                Debug.Log("Load asset called for: " + _asset.name);
-
-            //check if this asset is already loaded
-            //BUG
-            if (!currentlyLoadedAssets.Contains(_asset))
+            for (int i = 0; i < loadableAssets.Count; i++)
             {
-                //load addressable
-                Addressables.LoadAssetAsync<GameObject>(_asset.assetRef).Completed += obj => LoadAssetIsDone(obj, _asset);
+                AssetData _assetData = loadableAssets[i];
+
+                if (_assetData.assetRef == null)
+                {
+                    if (enableDebug)
+                        Debug.LogError("Tried to load asset wihtout addressable reference.");
+                    return;
+                }
+
+                if (enableDeepDebug)
+                    Debug.Log("Load asset called for: " + _assetData.assetRef.editorAsset.gameObject.transform.name);
+
+                //check if this asset is already loaded
+                if (!AssetIsCurrentlyLoaded(_assetData.assetRef))
+                {
+                    //get the instantiation data
+                    Vector3 pos = _assetData.positionTarget == null
+                        ? transform.position
+                        : _assetData.positionTarget.position;
+
+                    Quaternion rot = _assetData.positionTarget == null
+                        ? transform.rotation
+                        : _assetData.positionTarget.rotation;
+
+                    //instantiate addressable
+                    Addressables.InstantiateAsync(_assetData.assetRef, pos, rot, _assetData.parentTarget).Completed += obj => InstantiateAssetIsDone(obj, _assetData.assetRef);
+                }
+                else
+                {
+                    if (enableDebug)
+                        Debug.LogWarning("asset >" + _assetData.assetRef.editorAsset.gameObject.transform.name + "< is currently loaded");
+                }
             }
         }
 
-        private void UnloadAsset(AssetData _asset)
+        private void InstantiateAssetIsDone(AsyncOperationHandle<GameObject> _obj, AssetReference _assetRef)
         {
-            if (enableDeepDebug)
-                Debug.Log("Unload asset called for: " + _asset);
+            if (_obj.Status == AsyncOperationStatus.Failed || _obj.Status == AsyncOperationStatus.None)
+            {
+                if (enableDebug)
+                    Debug.LogWarning("Instantiaten of object: " + _obj.DebugName + " failed.");
+            }
 
-            Addressables.ReleaseInstance(_asset.sceneObjectReference);
-        }
-        #endregion
-
-        #region callbacks
-        private void LoadAssetIsDone(AsyncOperationHandle<GameObject> _obj, AssetData _assetData)
-        {
             //check if loaded
             if (_obj.Status == AsyncOperationStatus.Succeeded)
             {
                 Debug.Log("asset loaded: " + _obj.Result.transform.name);
 
-                //get the instantiation data
-                Vector3 pos = _assetData.positionTarget == null
-                    ? transform.position
-                    : _assetData.positionTarget.position;
-
-                Quaternion rot = _assetData.positionTarget == null
-                    ? transform.rotation
-                    : _assetData.positionTarget.rotation;
-
-                //instantiate the asset prefab
-                if (_assetData.parentTarget != null)
+                if (_obj.Result != null)
                 {
-                    _assetData.sceneObjectReference = Instantiate(_obj.Result, pos, rot, _assetData.parentTarget);
-                }
-                else
-                {
-                    _assetData.sceneObjectReference = Instantiate(_obj.Result, pos, rot);
-                }
+                    LoadReference reference;
+                    reference.instance = _obj.Result;
+                    reference.assetReference = _assetRef;
 
-                //add this stage to current loaded stage cache
-                //BUG
-                if (!currentlyLoadedAssets.Contains(_assetData))
-                {
-                    currentlyLoadedAssets.Add(_assetData);
+                    currentlyLoadedInstances.Add(reference);
+
+                    //public callback
+                    OnLoadingDone();
                 }
             }
         }
 
-        private void UnloadAssetIsDone(AsyncOperationHandle<GameObject> _obj, AssetData _AssetData)
+        /// <summary>
+        /// OnLoadingDone() gets called after all loadedable assets was instantiated by Addressables InstantiateAsync.
+        /// </summary>
+        public virtual void OnLoadingDone()
         {
-            //check if loaded
-            if (_obj.Status == AsyncOperationStatus.Succeeded)
-            {
-                Debug.Log("asset unloaded: " + _obj);
+            if (enableDeepDebug)
+                Debug.Log("OnLoadingDone() called.");
+        }
+        #endregion
 
-                /*
-                //add this stage to current loaded stage cache
-                if (!currentlyLoadedAssets.Contains(_AssetData))
-                {
-                    currentlyLoadedAssets.Add(_AssetData);
-                }
-                */
+        #region unloading methods
+        /// <summary>
+        /// Unloads all cached instantiated instances.
+        /// </summary>
+        public void UnloadAllAssets()
+        {
+            if (enableDeepDebug)
+                Debug.Log("Unload assets called.");
+
+            if (currentlyLoadedInstances.Count <= 0)
+            {
+                if (enableDebug)
+                    Debug.LogWarning("No currently loaded assets found. Unloading returned.");
+                return;
             }
+
+            //unload all cached loaded assets
+            for (int i = 0; i < currentlyLoadedInstances.Count; i++)
+            {
+                if (currentlyLoadedInstances != null)
+                {
+                    //Release Assets
+                    Addressables.ReleaseInstance(currentlyLoadedInstances[i].instance);
+                }
+            }
+
+            //clear the cache list
+            currentlyLoadedInstances.Clear();
+
+            //public callback
+            OnUnloadingDone();
+        }
+
+        /// <summary>
+        /// OnUnloadingDone() gets called after all loaded assets gets unloaded by Addressables ReleaseInstance.
+        /// </summary>
+        public virtual void OnUnloadingDone()
+        {
+            if(enableDeepDebug)
+                Debug.Log("OnUnloadingDone() called.");
         }
         #endregion
 
         #region helper methods
-        private AssetData[] GetCurrentLoadedAssets
+        private LoadReference[] GetCurrentLoadedAssets => currentlyLoadedInstances.ToArray();
+
+        private bool AssetIsCurrentlyLoaded(AssetReference assetRef)
         {
-            get
+            if (currentlyLoadedInstances.Any(i => i.assetReference == assetRef))
             {
-                AssetData[] assets = currentlyLoadedAssets.ToArray();
-                return assets;
+                return true;
             }
-        }
 
-        private  bool AssetDataIsInconsistent(AssetData data1, AssetData data2)
-        {
-            return data1.assetRef == data2.assetRef;
-        }
-
-        private void CheckDataConsistency()
-        {
-            
+            return false;
         }
 
         /// <summary>
@@ -245,21 +272,15 @@ namespace Agent.AssetLoader
                 return;
 
             // Show loading button
-            if (GUI.Button(new Rect(5, 5, 150, 30), "Load"))
+            if (GUI.Button(new Rect(5, 5, 150, 30), "Load All"))
             {
-                for (int i = 0; i < loadableAssets.Count; i++)
-                {
-                    LoadAsset(loadableAssets[i]);
-                }
+                LoadAllAssets();
             }
 
             // Show loading button
-            if (GUI.Button(new Rect(5, 50, 150, 30), "Unload"))
+            if (GUI.Button(new Rect(5, 50, 150, 30), "Unload All"))
             {
-                for (int i = 0; i < currentlyLoadedAssets.Count; i++)
-                {
-                    UnloadAsset(currentlyLoadedAssets[i]);
-                }
+                UnloadAllAssets();
             }
         }
 

@@ -1,0 +1,17 @@
+{
+    "name": "AssetLoader.Editor",
+    "references": [
+        "GUID:51f4a9a4f9a8889438caf41f7a31f17c"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
