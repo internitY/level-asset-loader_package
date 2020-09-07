@@ -59,6 +59,9 @@ namespace Agent.AssetLoader
 
         private void OnValidate()
         {
+            if(_triggerCollider == null)
+                _triggerCollider = GetComponent<BoxCollider>();
+
             //set collider always to trigger
             if (_triggerCollider != null)
             {
