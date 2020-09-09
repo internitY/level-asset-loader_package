@@ -4,7 +4,7 @@ using UnityEngine.AddressableAssets;
 namespace Agent.AssetLoader
 {
     [System.Serializable]
-    public struct AssetData
+    public class AssetData
     {
         [Tooltip("The Addressable Reference. Tip: Be sure that your level prefab is marked as addressable. If NULL the level loader will return an error.")]
         public AssetReferenceGameObject assetRef;

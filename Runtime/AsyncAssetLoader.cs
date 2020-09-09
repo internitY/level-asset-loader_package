@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -7,11 +6,14 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace Agent.AssetLoader
 {
+    [ExecuteAlways]
     [RequireComponent(typeof(BoxCollider))]
     public class AsyncAssetLoader : MonoBehaviour
     {
         #region instancing
         private BoxCollider _triggerCollider;
+
+        private BoxCollider _customTestCollider;
 
         public bool enableLoader = true;
         [Space(10)]
@@ -40,21 +42,6 @@ namespace Agent.AssetLoader
         private void Awake()
         {
             _triggerCollider = GetComponent<BoxCollider>();
-        }
-
-        private void OnEnable()
-        {
-            //set collider always to trigger
-            if(_triggerCollider != null)
-            {
-                _triggerCollider.enabled = true;
-                _triggerCollider.isTrigger = true;
-            }
-        }
-
-        private void OnDisable()
-        {
-
         }
 
         private void OnValidate()
@@ -249,6 +236,8 @@ namespace Agent.AssetLoader
         #region helper methods
         private LoadReference[] GetCurrentLoadedAssets => currentlyLoadedInstances.ToArray();
 
+        public bool CurrentlyAssetsLoaded => currentlyLoadedInstances.Count > 0;
+
         private bool AssetIsCurrentlyLoaded(AssetReference assetRef)
         {
             if (currentlyLoadedInstances.Any(i => i.assetReference == assetRef))
@@ -266,6 +255,17 @@ namespace Agent.AssetLoader
         {
             return layermask == (layermask | (1 << layer));
         }
+        #endregion
+
+        #region bound casting methods
+
+        private void InitializeTriggerVolume()
+        {
+            _customTestCollider = new BoxCollider();
+            _customTestCollider.center = transform.position;
+            _customTestCollider.size = Vector3.one;
+        }
+
         #endregion
 
         #region GUI
