@@ -11,7 +11,7 @@
     },
 	
 	"displayName": "Level Asset Loader",
-    "description": "A small level asset loader by using addressables. Its using unitys trigger methods to load oder unload addressable assets dynamically in your scene.",
+    "description": "A small asset loader by using addressables. Its using unitys trigger methods to load oder unload addressable assets dynamically in your scene.",
     "documentation": "",
     "keywords": [
         "level",
