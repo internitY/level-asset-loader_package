@@ -10,6 +10,7 @@
 		"com.unity.addressables": "1.8.5"
     },
 	
+	"category": "Unity3d",
 	"displayName": "Level Asset Loader",
     "description": "A small asset loader by using addressables. Its using unitys trigger methods to load oder unload addressable assets dynamically in your scene.",
     "documentation": "",
