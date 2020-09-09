@@ -2,15 +2,16 @@
     "author": {
         "email": "eric.kirschstein@gmail.com",
         "name": "Eric Kirschstein",
-        "url": ""
+        "url": "https://github.com/internitY/level-asset-loader_package"
     },
+
     "dependencies": {
         "com.unity.modules.physics": "1.0.0",
 		"com.unity.addressables": "1.8.5"
     },
 	
-    "description": "A small level asset loader by using addressables.",
-    "displayName": "Level Asset Loader",
+	"displayName": "Level Asset Loader",
+    "description": "A small level asset loader by using addressables. Its using unitys trigger methods to load oder unload addressable assets dynamically in your scene.",
     "documentation": "",
     "keywords": [
         "level",
@@ -18,8 +19,9 @@
         "addressable",
         "runtime"
     ],
+	
     "name": "com.level.loader",
     "unity": "2019.4",
     "unityRelease": "8f1",
-    "version": "0.1.0"
+    "version": "0.1.1"
 }

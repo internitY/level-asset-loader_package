@@ -8,11 +8,15 @@ namespace Agent.AssetLoader
     {
         private static AsyncAssetLoader _myTarget;
 
+        //SceneView
+        private static Vector2 buttonSize = new Vector2(70, 30);
+        private static Color loadColor = new Color(0, 100, 0, 0.1f);
+        private static Color unloadColor = new Color(100, 0, 0, 0.1f);
+
+
         #region unity loop
         private void OnEnable()
         {
-            _myTarget = (AsyncAssetLoader)target;
-
             SceneView.duringSceneGui += v => CastSceneViewEditor(_myTarget);
 
             if (SceneView.lastActiveSceneView) SceneView.lastActiveSceneView.Repaint();
@@ -24,9 +28,13 @@ namespace Agent.AssetLoader
             SceneView.duringSceneGui -= v => CastSceneViewEditor(_myTarget);
         }
 
+        //Show GUI in Inspector
         public override void OnInspectorGUI()
         {
             _myTarget = (AsyncAssetLoader)target;
+
+            if (_myTarget == null)
+                return;
 
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Load All"))
@@ -50,10 +58,12 @@ namespace Agent.AssetLoader
         #region helper methods
         private static void CastSceneViewEditor(AsyncAssetLoader _myTarget)
         {
+            if (_myTarget == null)
+                return;
+
             Handles.BeginGUI();
 
             float screenHeight = SceneView.currentDrawingSceneView.position.size.y;
-            Vector2 buttonSize = new Vector2(70, 30);
 
             Vector3 targetPos = _myTarget.gameObject.transform.position;
             Vector3 screenPoint = SceneView.lastActiveSceneView.camera.WorldToScreenPoint(targetPos);
@@ -65,7 +75,7 @@ namespace Agent.AssetLoader
 
                 if (!_myTarget.CurrentlyAssetsLoaded)
                 {
-                    GUI.backgroundColor = new Color(0, 100, 0, 0.1f);
+                    GUI.backgroundColor = loadColor;
                     GUI.contentColor = Color.black;
                     if (GUI.Button(new Rect(buttonPos1, buttonSize), "Load!"))
                     {
@@ -82,7 +92,7 @@ namespace Agent.AssetLoader
                 }
                 else
                 {
-                    GUI.backgroundColor = new Color(100, 0, 0, 0.1f);
+                    GUI.backgroundColor = unloadColor;
                     GUI.contentColor = Color.black;
                     if (GUI.Button(new Rect(buttonPos1, buttonSize), "Unload!"))
                     {

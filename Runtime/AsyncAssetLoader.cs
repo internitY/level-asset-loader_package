@@ -12,15 +12,19 @@ namespace Agent.AssetLoader
     {
         #region instancing
         private BoxCollider _triggerCollider;
-
         private BoxCollider _customTestCollider;
 
-        public bool enableLoader = true;
         [Space(10)]
         [Tooltip("Colliders with this Layer can trigger the Asset Loader. Make sure this is possible by the physics matix in project settings.")]
         [SerializeField] private LayerMask collidableLayers;
         [Space(10)]
         [SerializeField] private bool unloadWhenTriggerExit;
+
+        public bool UnloadWhenTriggerExit
+        {
+            get => unloadWhenTriggerExit;
+            set => unloadWhenTriggerExit = value;
+        }
 
         [Header("Assets")]
         [SerializeField] private List<AssetData> loadableAssets = new List<AssetData>();
@@ -264,6 +268,8 @@ namespace Agent.AssetLoader
             _customTestCollider = new BoxCollider();
             _customTestCollider.center = transform.position;
             _customTestCollider.size = Vector3.one;
+
+            _customTestCollider.isTrigger = true;
         }
 
         #endregion
