@@ -48,6 +48,16 @@ namespace Agent.AssetLoader
             _triggerCollider = GetComponent<BoxCollider>();
         }
 
+        private void OnEnable()
+        {
+            UnloadAllAssets();
+        }
+
+        private void OnDisable()
+        {
+            UnloadAllAssets();
+        }
+
         private void OnValidate()
         {
             if(_triggerCollider == null)
@@ -276,7 +286,7 @@ namespace Agent.AssetLoader
         #region GUI
         private void OnGUI()
         {
-            if (!enableDebug)
+            if (!enableDeepDebug)
                 return;
 
             // Show loading button

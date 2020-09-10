@@ -26,7 +26,6 @@ namespace Agent.AssetLoader
 
         private void OnDisable()
         {
-            // if you don't do this Unity throws a hissy fit when you select another object
             SceneView.duringSceneGui -= v => CastSceneViewEditor(_myTarget);
         }
 
@@ -37,14 +36,19 @@ namespace Agent.AssetLoader
                 return;
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Load All"))
-            {
-                _myTarget.LoadAllAssets();
-            }
 
-            if (GUILayout.Button("Unload All"))
+            //this version checks for playing because loading/unloading ist not working properly in edit mode with adressables
+            if (Application.isPlaying)
             {
-                _myTarget.UnloadAllAssets();
+                if (GUILayout.Button("Load All"))
+                {
+                    _myTarget.LoadAllAssets();
+                }
+
+                if (GUILayout.Button("Unload All"))
+                {
+                    _myTarget.UnloadAllAssets();
+                }
             }
 
             EditorGUILayout.EndHorizontal();
@@ -79,14 +83,14 @@ namespace Agent.AssetLoader
                     GUI.contentColor = Color.black;
                     if (GUI.Button(new Rect(buttonPos1, buttonSize), "Load!"))
                     {
-                        _myTarget.LoadAllAssets();
-
+                        //this version checks for playing because loading/unloading ist not working properly in edit mode with adressables
                         if (!Application.isPlaying)
                         {
-                            Debug.LogWarning("LOADING Assets called. Actually this is may not working properly in Edit Mode.");
+                            Debug.LogWarning("LOADING Assets rejected. Actually this Loading/Unloading is not working properly in Edit Mode with Addressables.");
                         }
                         else
                         {
+                            _myTarget.LoadAllAssets();
                             Debug.Log("LOADING Assets called.");
                         }
                     }
@@ -99,12 +103,14 @@ namespace Agent.AssetLoader
                     {
                         _myTarget.UnloadAllAssets();
 
+                        //this version checks for playing because loading/unloading ist not working properly in edit mode with adressables
                         if (!Application.isPlaying)
                         {
-                            Debug.LogWarning("UNLOADING Assets called. Actually this is may not working properly in Edit Mode.");
+                            Debug.LogWarning("UNLOADING Assets rejected. Actually this Loading/Unloading is not working properly in Edit Mode with Addressables.");
                         }
                         else
                         {
+                            _myTarget.LoadAllAssets();
                             Debug.Log("UNLOADING Assets called.");
                         }
                     }
