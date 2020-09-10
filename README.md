@@ -1,2 +1,3 @@
-# level-asset-loader_package
-A small level asset loader by using addressables.
+# Async Asset Loader
+
+This is a small asset loader by using Unitys addressables system and trigger methods to load/unload addressable assets dynamically.
