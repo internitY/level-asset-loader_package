@@ -101,8 +101,6 @@ namespace Agent.AssetLoader
                     GUI.contentColor = Color.black;
                     if (GUI.Button(new Rect(buttonPos1, buttonSize), "Unload!"))
                     {
-                        _myTarget.UnloadAllAssets();
-
                         //this version checks for playing because loading/unloading ist not working properly in edit mode with adressables
                         if (!Application.isPlaying)
                         {
@@ -110,7 +108,7 @@ namespace Agent.AssetLoader
                         }
                         else
                         {
-                            _myTarget.LoadAllAssets();
+                            _myTarget.UnloadAllAssets();
                             Debug.Log("UNLOADING Assets called.");
                         }
                     }
