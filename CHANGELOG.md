@@ -5,15 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.1.3] - 2020-09-10
-### Added
-- 
 
-### Changed
-- 
+### Added
+- MenuItem to create a new Asset Loader GameObject ("GameObject/Agent/Create Asset Loader..")
 
 ### Removed
--
+- rejecting load/unload calls by GUI buttons when in edit mode because of addressable system bugs.
 
-## [Unreleased]
-### [0.1.2]
+## [0.1.2]
 - basic package
