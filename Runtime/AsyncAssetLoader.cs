@@ -240,7 +240,7 @@ namespace Agent.AssetLoader
         #region helper methods
         private LoadReference[] GetCurrentLoadedAssets => currentlyLoadedInstances.ToArray();
 
-        public bool CurrentlyAssetsLoaded => currentlyLoadedInstances.Count > 0;
+        public bool AssetsLoaded => currentlyLoadedInstances.Count > 0;
 
         private bool AssetIsCurrentlyLoaded(AssetReference assetRef)
         {
@@ -262,7 +262,6 @@ namespace Agent.AssetLoader
         #endregion
 
         #region bound casting methods
-
         private void InitializeTriggerVolume()
         {
             _customTestCollider = new BoxCollider();
@@ -298,9 +297,7 @@ namespace Agent.AssetLoader
             //Show trigger bounds
             if (_triggerCollider != null)
             {
-                bool assetsLoaded = GetCurrentLoadedAssets.Length > 0;
-
-                Gizmos.color = assetsLoaded ? new Color(0, 255, 0, 0.2f) : new Color(255, 0, 0, 0.2f);
+                Gizmos.color = AssetsLoaded ? new Color(0, 255, 0, 0.2f) : new Color(255, 0, 0, 0.2f);
                 Gizmos.DrawCube(_triggerCollider.bounds.center, _triggerCollider.bounds.size);
             }
         }

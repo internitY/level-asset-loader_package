@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEditor;
+using UnityEngine.SceneManagement;
 
 namespace Agent.AssetLoader
 {
@@ -13,10 +14,11 @@ namespace Agent.AssetLoader
         private static Color loadColor = new Color(0, 100, 0, 0.1f);
         private static Color unloadColor = new Color(100, 0, 0, 0.1f);
 
-
         #region unity loop
         private void OnEnable()
         {
+            _myTarget = (AsyncAssetLoader)target;
+
             SceneView.duringSceneGui += v => CastSceneViewEditor(_myTarget);
 
             if (SceneView.lastActiveSceneView) SceneView.lastActiveSceneView.Repaint();
@@ -31,8 +33,6 @@ namespace Agent.AssetLoader
         //Show GUI in Inspector
         public override void OnInspectorGUI()
         {
-            _myTarget = (AsyncAssetLoader)target;
-
             if (_myTarget == null)
                 return;
 
@@ -73,13 +73,14 @@ namespace Agent.AssetLoader
             {
                 Vector2 buttonPos1 = new Vector2(screenPoint.x - buttonSize.x * 0.5f, screenHeight - screenPoint.y - buttonSize.y - 50);
 
-                if (!_myTarget.CurrentlyAssetsLoaded)
+                if (!_myTarget.AssetsLoaded)
                 {
                     GUI.backgroundColor = loadColor;
                     GUI.contentColor = Color.black;
                     if (GUI.Button(new Rect(buttonPos1, buttonSize), "Load!"))
                     {
                         _myTarget.LoadAllAssets();
+
                         if (!Application.isPlaying)
                         {
                             Debug.LogWarning("LOADING Assets called. Actually this is may not working properly in Edit Mode.");
@@ -111,6 +112,37 @@ namespace Agent.AssetLoader
             }
 
             Handles.EndGUI();
+        }
+
+        [MenuItem("GameObject/Agent/Create Asset Loader..")]
+        public static void CreateLoader()
+        {
+            Debug.Log("Creating a level loader..");
+
+            SceneView.lastActiveSceneView.Focus();
+
+            float screenHeight = SceneView.lastActiveSceneView.camera.pixelHeight;
+            float screenWidth = SceneView.lastActiveSceneView.camera.pixelWidth;
+            Vector2 screenCenter = new Vector2(screenWidth * 0.5f, screenHeight * 0.5f);
+
+            Ray ray = SceneView.lastActiveSceneView.camera.ScreenPointToRay(new Vector3(screenCenter.x, screenCenter.y, 1f));
+            RaycastHit hit;
+
+            Vector3 targetPos;
+
+            if (Physics.Raycast(ray, out hit))
+            {
+                targetPos = hit.point;
+            }
+            else
+            {
+                targetPos = Vector3.zero;
+            }
+
+            GameObject newLoader = new GameObject();
+            newLoader.name = "LevelLoaderAsset";
+            newLoader.AddComponent<AsyncAssetLoader>();
+            newLoader.transform.position = targetPos;
         }
         #endregion
     }
