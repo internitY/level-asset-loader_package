@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using UnityEditor;
-using UnityEngine.SceneManagement;
 
 namespace Agent.AssetLoader
 {
@@ -35,8 +34,12 @@ namespace Agent.AssetLoader
             if (_myTarget == null)
                 return;
 
-            EditorGUILayout.BeginHorizontal();
+            //check if the target is selected in hierarchy/inspector
+            if (Selection.activeGameObject != _myTarget.gameObject)
+                return;
 
+            //HANDLE INSPECTOR GUI BUTTONS
+            EditorGUILayout.BeginHorizontal();
             //this version checks for playing because loading/unloading ist not working properly in edit mode with adressables
             if (Application.isPlaying)
             {
@@ -50,11 +53,20 @@ namespace Agent.AssetLoader
                     _myTarget.UnloadAllAssets();
                 }
             }
-
             EditorGUILayout.EndHorizontal();
 
 
-            //draw inspector after custom buttons
+            EditorGUILayout.BeginHorizontal();
+            if (Application.isPlaying)
+            {
+                if (GUILayout.Button("Refresh Asset Data"))
+                {
+                    _myTarget.RefreshAssetData();
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+
+            //DRAW CUSTOM INSPECTOR
             DrawDefaultInspector();
         }
         #endregion
@@ -64,6 +76,12 @@ namespace Agent.AssetLoader
         {
             if (_myTarget == null)
                 return;
+
+            //check if the target is selected in hierarchy/inspector
+            if (Selection.activeGameObject != _myTarget.gameObject)
+                return;
+
+            CheckHotKey(_myTarget);
 
             Handles.BeginGUI();
 
@@ -77,7 +95,7 @@ namespace Agent.AssetLoader
             {
                 Vector2 buttonPos1 = new Vector2(screenPoint.x - buttonSize.x * 0.5f, screenHeight - screenPoint.y - buttonSize.y - 50);
 
-                if (!_myTarget.AssetsLoaded)
+                if (!_myTarget.AssetsAreLoaded)
                 {
                     GUI.backgroundColor = loadColor;
                     GUI.contentColor = Color.black;
@@ -118,13 +136,18 @@ namespace Agent.AssetLoader
             Handles.EndGUI();
         }
 
-        [MenuItem("GameObject/Agent/Create Asset Loader..")]
+        /// <summary>
+        /// This Method is linked to the Unity Menu to create a new Asset Loader.
+        /// </summary>
+        [MenuItem("GameObject/AssetLoader/Create..", false, 1)]
         public static void CreateLoader()
         {
             Debug.Log("Creating a level loader..");
 
+            //focus scene view when created
             SceneView.lastActiveSceneView.Focus();
 
+            //handle creation position
             float screenHeight = SceneView.lastActiveSceneView.camera.pixelHeight;
             float screenWidth = SceneView.lastActiveSceneView.camera.pixelWidth;
             Vector2 screenCenter = new Vector2(screenWidth * 0.5f, screenHeight * 0.5f);
@@ -143,10 +166,35 @@ namespace Agent.AssetLoader
                 targetPos = Vector3.zero;
             }
 
+            //create new asset loader
             GameObject newLoader = new GameObject();
             newLoader.name = "LevelLoaderAsset";
             newLoader.AddComponent<AsyncAssetLoader>();
             newLoader.transform.position = targetPos;
+        }
+
+        /// <summary>
+        /// placeholder to implement a shortcut
+        /// </summary>
+        public static void CheckHotKey(AsyncAssetLoader target)
+        {
+            if (target == null)
+                return;
+
+            //HANDLE TARGET TRANSFORM/OVERRIDES VISUALIZATION
+            Event e = Event.current;
+            switch (e.type)
+            {
+                case EventType.KeyUp:
+                {
+                    if (e.keyCode == (KeyCode.A))
+                    {
+                        Debug.Log("refreshing asset data..");
+                        target.RefreshAssetData();
+                    }
+                    break;
+                }
+            }
         }
         #endregion
     }

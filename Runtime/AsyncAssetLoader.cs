@@ -35,10 +35,15 @@ namespace Agent.AssetLoader
         {
             public AssetReference assetReference;
             public GameObject instance;
+            public Transform targetedParent;
+            public Transform targetedTransform;
+            public Vector3 targetedPosition;
+            public Quaternion targetedRotation;
         }
 
         [Header("Debug")]
         [SerializeField] private bool enableDebug = false;
+        [SerializeField] private bool enableHelperGUI = false;
         [SerializeField] private bool enableDeepDebug = false;
         #endregion
 
@@ -69,6 +74,10 @@ namespace Agent.AssetLoader
                 _triggerCollider.enabled = true;
                 _triggerCollider.isTrigger = true;
             }
+
+            //subscribe refresher to avoid sendMessage warnings
+            UnityEditor.EditorApplication.delayCall += RefreshAssetData;
+
         }
 
         private void OnTriggerEnter(Collider col)
@@ -148,16 +157,16 @@ namespace Agent.AssetLoader
                 if (!AssetIsCurrentlyLoaded(_assetData.assetRef))
                 {
                     //get the instantiation data
-                    Vector3 pos = _assetData.positionTarget == null
-                        ? transform.position
-                        : _assetData.positionTarget.position;
+                    Vector3 pos = _assetData.transformTarget == null
+                        ? _assetData.positionOverride
+                        : _assetData.transformTarget.position;
 
-                    Quaternion rot = _assetData.positionTarget == null
-                        ? transform.rotation
-                        : _assetData.positionTarget.rotation;
+                    Quaternion rot = _assetData.transformTarget == null
+                        ? _assetData.rotationOverride
+                        : _assetData.transformTarget.rotation;
 
                     //instantiate addressable
-                    Addressables.InstantiateAsync(_assetData.assetRef, pos, rot, _assetData.parentTarget).Completed += obj => InstantiateAssetIsDone(obj, _assetData.assetRef);
+                    Addressables.InstantiateAsync(_assetData.assetRef, pos, rot, _assetData.parentTarget).Completed += obj => InstantiateAssetIsDone(obj, _assetData);
                 }
                 else
                 {
@@ -167,7 +176,7 @@ namespace Agent.AssetLoader
             }
         }
 
-        private void InstantiateAssetIsDone(AsyncOperationHandle<GameObject> _obj, AssetReference _assetRef)
+        private void InstantiateAssetIsDone(AsyncOperationHandle<GameObject> _obj, AssetData _data)
         {
             if (_obj.Status == AsyncOperationStatus.Failed || _obj.Status == AsyncOperationStatus.None)
             {
@@ -184,8 +193,13 @@ namespace Agent.AssetLoader
                 {
                     LoadReference reference;
                     reference.instance = _obj.Result;
-                    reference.assetReference = _assetRef;
+                    reference.assetReference = _data.assetRef;
+                    reference.targetedTransform = _data.transformTarget;
+                    reference.targetedPosition = _data.positionOverride;
+                    reference.targetedRotation = _data.rotationOverride;
+                    reference.targetedParent = _data.parentTarget;
 
+                    //add the reference to current loaded assets
                     currentlyLoadedInstances.Add(reference);
 
                     //public callback
@@ -247,11 +261,28 @@ namespace Agent.AssetLoader
         }
         #endregion
 
-        #region helper methods
+        #region helpers
+        /// <summary>
+        /// Return alls currently loaded Assets. This can be null, if no asset is loaded.
+        /// </summary>
         private LoadReference[] GetCurrentLoadedAssets => currentlyLoadedInstances.ToArray();
 
-        public bool AssetsLoaded => currentlyLoadedInstances.Count > 0;
+        /// <summary>
+        /// Return the first laoded asset by the asset reference.
+        /// </summary>
+        private LoadReference GetLoadedAsset(AssetReference assetRef)
+        {
+            return currentlyLoadedInstances.Find(i => i.assetReference == assetRef);
+        }
 
+        /// <summary>
+        /// Checks if there are some loaded assets inside the currentlyLoadedInstances List.
+        /// </summary>
+        public bool AssetsAreLoaded => currentlyLoadedInstances.Count > 0;
+
+        /// <summary>
+        /// Checks if the specific asset reference is loaded by this loader.
+        /// </summary>
         private bool AssetIsCurrentlyLoaded(AssetReference assetRef)
         {
             if (currentlyLoadedInstances.Any(i => i.assetReference == assetRef))
@@ -265,13 +296,91 @@ namespace Agent.AssetLoader
         /// <summary>
         /// Checks if the layer contains to the layermask.
         /// </summary>
-        public static bool LayerMaskContainsLayer(LayerMask layermask, int layer)
+        private static bool LayerMaskContainsLayer(LayerMask layermask, int layer)
         {
             return layermask == (layermask | (1 << layer));
         }
         #endregion
 
+        #region data resetter
+        /// <summary>
+        /// Resets the position to the target position and rotation. This method is linked to the refresher button in inspector.
+        /// </summary>
+        public void RefreshAssetData()
+        {
+            if (!AssetsAreLoaded)
+            {
+                if(enableDebug)
+                    Debug.LogWarning("No currently loaded assets found.");
+                return;
+            }
+
+            if(enableDebug)
+                Debug.Log("Repositioning loaded assets..");
+
+            for (int i = 0; i < currentlyLoadedInstances.Count; i++)
+            {
+                //find the targeted reference and create new one
+                LoadReference reference = currentlyLoadedInstances.Find(x => x.assetReference == currentlyLoadedInstances[i].assetReference);
+
+                //find the origin loadable of the currently loaded reference
+                AssetData origin = loadableAssets.Find(x => x.assetRef == reference.assetReference);
+
+                if (origin != null && reference.instance != null)
+                {
+                    //handle position and rotation
+                    //handle by given target
+                    if (origin.transformTarget != null)
+                    {
+                        //reset the target (this may occur if the target was changed while runtime
+                        reference.targetedTransform = origin.transformTarget;
+
+                        //reset the pos and rot by the target pos and rot
+                        reference.instance.transform.position = reference.targetedTransform.position;
+                        reference.instance.transform.rotation = reference.targetedTransform.rotation;
+                    }
+                    //otherwise handle by pos and rot overrides
+                    else
+                    {
+                        reference.targetedTransform = null;
+
+                        //BUG: this seems not to work?
+                        //re-cache pos and rot
+                        reference.targetedPosition = origin.positionOverride;
+                        reference.targetedRotation = origin.rotationOverride;
+
+                        //set the instanced gameobject to cached pos and rot
+                        reference.instance.transform.position = reference.targetedPosition;
+                        reference.instance.transform.rotation = reference.targetedRotation;
+                    }
+
+                    //handle parenting
+                    if (origin.parentTarget != null)
+                    {
+                        reference.targetedParent = origin.parentTarget;
+                        reference.instance.transform.parent = reference.targetedParent;
+                    }
+                    else
+                    {
+                        reference.targetedParent = null;
+                        reference.instance.transform.parent = null;
+                    }
+
+                    //recache new reference
+                    currentlyLoadedInstances[i] = reference;
+                }
+                else
+                {
+                    //Debug.LogError("The Resetter could not found a origin and/or a loaded instance: " + origin + " | " + reference.instance);
+                }
+            }
+        }
+        #endregion
+
         #region bound casting methods
+        /// <summary>
+        /// placeholder: Configuring a custom trigger collider to hide unitys box collider component.
+        /// </summary>
         private void InitializeTriggerVolume()
         {
             _customTestCollider = new BoxCollider();
@@ -307,8 +416,30 @@ namespace Agent.AssetLoader
             //Show trigger bounds
             if (_triggerCollider != null)
             {
-                Gizmos.color = AssetsLoaded ? new Color(0, 255, 0, 0.2f) : new Color(255, 0, 0, 0.2f);
+                Gizmos.color = AssetsAreLoaded ? new Color(0, 255, 0, 0.2f) : new Color(255, 0, 0, 0.2f);
                 Gizmos.DrawCube(_triggerCollider.bounds.center, _triggerCollider.bounds.size);
+            }
+
+            if (loadableAssets.Count <= 0)
+                return;
+
+            if (enableHelperGUI)
+            {
+                for (int i = 0; i < loadableAssets.Count; i++)
+                {
+                    //visualize override pos
+                    if (loadableAssets[i].transformTarget == null)
+                    {
+                        Gizmos.color = Color.green;
+                        Gizmos.DrawWireSphere(loadableAssets[i].positionOverride, 0.2f);
+                    }
+                    //visualize targets
+                    else
+                    {
+                        Gizmos.color = Color.yellow;
+                        Gizmos.DrawWireSphere(loadableAssets[i].transformTarget.position, 0.2f);
+                    }
+                }
             }
         }
         #endregion
