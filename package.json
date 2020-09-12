@@ -12,7 +12,7 @@
 	
 	"category": "Unity3d",
 	"displayName": "Level Asset Loader",
-    "description": "A simple asset loader by using addressables. Its using unitys trigger methods to load oder unload addressable assets dynamically in your scene.",
+    "description": "A simple async asset loader. It is using unitys addressable package and physic trigger methods to load or unload assets dynamically in your scene.",
     "documentation": "",
     "keywords": [
         "level",
@@ -24,5 +24,5 @@
     "name": "com.level.loader",
     "unity": "2019.4",
     "unityRelease": "8f1",
-    "version": "0.1.4"
+    "version": "0.1.5"
 }

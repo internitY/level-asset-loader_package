@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace Agent.AssetLoader
 {
-    [ExecuteAlways]
     [RequireComponent(typeof(BoxCollider))]
     public class AsyncAssetLoader : MonoBehaviour
     {
@@ -45,12 +45,39 @@ namespace Agent.AssetLoader
         [SerializeField] private bool enableDebug = false;
         [SerializeField] private bool enableHelperGUI = false;
         [SerializeField] private bool enableDeepDebug = false;
+
+        private Mesh coordMesh = null;
+        public Mesh CoordArrows
+        {
+            private set => coordMesh = value;
+            get
+            {
+                if (coordMesh == null)
+                {
+                    coordMesh = (Mesh)AssetDatabase.LoadAssetAtPath("Packages/com.level.loader/Assets/coord arrows.FBX", typeof(Mesh));
+
+                    if (enableDeepDebug)
+                        Debug.Log("gizmo mesh found: " + coordMesh.name);
+                }
+
+                return coordMesh;
+            }
+        }
+
+        //to be continue
+        //public Material TestMat;
+
         #endregion
 
         #region unity loop
         private void Awake()
         {
             _triggerCollider = GetComponent<BoxCollider>();
+        }
+
+        private void Start()
+        {
+            CoordArrows = (Mesh)AssetDatabase.LoadAssetAtPath("Packages/com.level.loader/Assets/coord arrows.FBX", typeof(Mesh));
         }
 
         private void OnEnable()
@@ -392,19 +419,18 @@ namespace Agent.AssetLoader
 
         #endregion
 
-        #region GUI
+        #if UNITY_EDITOR
         private void OnGUI()
         {
             if (!enableDeepDebug)
                 return;
 
-            // Show loading button
+            //show game view buttons
             if (GUI.Button(new Rect(5, 5, 150, 30), "Load All"))
             {
                 LoadAllAssets();
             }
 
-            // Show loading button
             if (GUI.Button(new Rect(5, 50, 150, 30), "Unload All"))
             {
                 UnloadAllAssets();
@@ -413,7 +439,7 @@ namespace Agent.AssetLoader
 
         private void OnDrawGizmos()
         {
-            //Show trigger bounds
+            //Show trigger volume bounds
             if (_triggerCollider != null)
             {
                 Gizmos.color = AssetsAreLoaded ? new Color(0, 255, 0, 0.2f) : new Color(255, 0, 0, 0.2f);
@@ -423,26 +449,45 @@ namespace Agent.AssetLoader
             if (loadableAssets.Count <= 0)
                 return;
 
-            if (enableHelperGUI)
+            CoordArrows.RecalculateNormals();
+
+            //if gizmo helper enabled and mesh found
+            if (enableHelperGUI && CoordArrows != null)
             {
+                //cast coordination arrow helper gizmo for target transform or override pos/rot case
                 for (int i = 0; i < loadableAssets.Count; i++)
                 {
-                    //visualize override pos
+                    Matrix4x4 matrix;
+
+                    //visualize override pos/rot
                     if (loadableAssets[i].transformTarget == null)
                     {
-                        Gizmos.color = Color.green;
-                        Gizmos.DrawWireSphere(loadableAssets[i].positionOverride, 0.2f);
+                        matrix = Matrix4x4.TRS(loadableAssets[i].positionOverride, loadableAssets[i].rotationOverride, Vector3.one);
+                        Gizmos.matrix = matrix;
+                        Gizmos.color = new Color(0, 255, 0, 0.7f);
+
+                        //BUG: flickering??
+                        //Graphics.DrawMesh(CoordArrows, loadableAssets[i].positionOverride, loadableAssets[i].rotationOverride, TestMat, 0);
+
                     }
                     //visualize targets
                     else
                     {
-                        Gizmos.color = Color.yellow;
-                        Gizmos.DrawWireSphere(loadableAssets[i].transformTarget.position, 0.2f);
+                        matrix = Matrix4x4.TRS(loadableAssets[i].transformTarget.position, loadableAssets[i].transformTarget.rotation, loadableAssets[i].transformTarget.localScale);
+                        Gizmos.matrix = matrix;
+                        Gizmos.color = new Color(255, 255, 0, 0.7f);
+
+                        //Graphics.DrawMeshNow(CoordArrows, loadableAssets[i].transformTarget.position, loadableAssets[i].transformTarget.rotation);
                     }
+
+                    //fallback: gizmo with not holding the mesh material (graphics.drawmesh is actually buggy)
+                    Gizmos.DrawMesh(CoordArrows, Vector3.zero, Quaternion.identity);
+
+                    //to be continue: draw mesh with material to highlight x, y and z axis differently
                 }
             }
         }
-        #endregion
+        #endif
     }
 }
 
