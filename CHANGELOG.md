@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - custom mesh to show the position and rotation of the Asset Instantiation (transform target (yellow) or override possition and rotation (green)), when helper gui enabled
 
-###Changed
+### Changed
 - some script adjustments
 
 ## [0.1.4] - 2020-09-11
@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - refresh method + gui button (in inspector only) to reset the position, rotation and parent transform of a loaded asset to the edited one.
 - debug gizmos can now be turned on in inspector, if you wanna visualize the target transform (yellow gizmo sphere) or the override position (green gizmo sphere). To show the override position, the target must be null. Helper Gizmos ignores the rotation at this moment.
 
-#Changed
+### Changed
 - gui only displays when the loader-gameobject is selected
 
 ## [0.1.3] - 2020-09-10
