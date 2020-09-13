@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2020-09-13
+
+### Fixed
+- unload assets before exiting play mode to avoid warning messages of lost addressable.instances
+- fixed Quaternion To Matrix conversion fails when overrideRotation was 0,0,0
+
 ## [0.1.5] - 2020-09-12
 
 ### Added
@@ -25,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - double-call unload by scene view gui
-- fixed CHANGELOG versioning number of previous push
+- CHANGELOG versioning of previous push
 
 ## [0.1.2] - 2020-09-10
 

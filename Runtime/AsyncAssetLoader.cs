@@ -14,20 +14,24 @@ namespace Agent.AssetLoader
         private BoxCollider _triggerCollider;
         private BoxCollider _customTestCollider;
 
-        [Space(10)]
-        [Tooltip("Colliders with this Layer can trigger the Asset Loader. Make sure this is possible by the physics matix in project settings.")]
-        [SerializeField] private LayerMask collidableLayers;
-        [Space(10)]
+        [Header("GENERAL")]
+        /// <summary>
+        /// https://docs.unity3d.com/ScriptReference/MonoBehaviour.OnTriggerEnter.html
+        /// https://docs.unity3d.com/Manual/LayerBasedCollision.html
+        /// </summary>
+        [Tooltip("Colliders/Rigidbodies with this Layer triggers asset loading. Make sure this is possible by the physics matix in your project settings.")]
+        [SerializeField] private LayerMask collidableLayers = 0;
+        [Space(5)]
         [SerializeField] private bool unloadWhenTriggerExit;
-
         public bool UnloadWhenTriggerExit
         {
             get => unloadWhenTriggerExit;
             set => unloadWhenTriggerExit = value;
         }
 
-        [Header("Assets")]
+        [Header("ASSETS TO LOAD")]
         [SerializeField] private List<AssetData> loadableAssets = new List<AssetData>();
+        [Space(20)]
         [SerializeField] private List<LoadReference> currentlyLoadedInstances = new List<LoadReference>();
 
         [System.Serializable]
@@ -41,7 +45,7 @@ namespace Agent.AssetLoader
             public Quaternion targetedRotation;
         }
 
-        [Header("Debug")]
+        [Header("DEBUG")]
         [SerializeField] private bool enableDebug = false;
         [SerializeField] private bool enableHelperGUI = false;
         [SerializeField] private bool enableDeepDebug = false;
@@ -83,6 +87,11 @@ namespace Agent.AssetLoader
         private void OnEnable()
         {
             UnloadAllAssets();
+
+#if UNITY_EDITOR
+            //subscribe play mode checker to unload before exiting play mode to avoid warning
+            EditorApplication.playModeStateChanged += state => LogPlayModeState(state, this);
+#endif
         }
 
         private void OnDisable()
@@ -102,9 +111,7 @@ namespace Agent.AssetLoader
                 _triggerCollider.isTrigger = true;
             }
 
-            //subscribe refresher to avoid sendMessage warnings
-            UnityEditor.EditorApplication.delayCall += RefreshAssetData;
-
+            RefreshAssetData();
         }
 
         private void OnTriggerEnter(Collider col)
@@ -419,7 +426,15 @@ namespace Agent.AssetLoader
 
         #endregion
 
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
+        private static void LogPlayModeState(PlayModeStateChange state, AsyncAssetLoader loader)
+        {
+            if (state == PlayModeStateChange.ExitingPlayMode)
+            {
+                loader.UnloadAllAssets();
+            }
+        }
+
         private void OnGUI()
         {
             if (!enableDeepDebug)
@@ -449,36 +464,23 @@ namespace Agent.AssetLoader
             if (loadableAssets.Count <= 0)
                 return;
 
-            CoordArrows.RecalculateNormals();
-
             //if gizmo helper enabled and mesh found
             if (enableHelperGUI && CoordArrows != null)
             {
                 //cast coordination arrow helper gizmo for target transform or override pos/rot case
                 for (int i = 0; i < loadableAssets.Count; i++)
                 {
-                    Matrix4x4 matrix;
+                     Matrix4x4 _matrix = loadableAssets[i].transformTarget == null
+                        ? Matrix4x4.TRS(loadableAssets[i].positionOverride, loadableAssets[i].rotationOverride.normalized,
+                            Vector3.one)
+                        : Matrix4x4.TRS(loadableAssets[i].transformTarget.position,
+                            loadableAssets[i].transformTarget.rotation, loadableAssets[i].transformTarget.localScale);
 
-                    //visualize override pos/rot
-                    if (loadableAssets[i].transformTarget == null)
-                    {
-                        matrix = Matrix4x4.TRS(loadableAssets[i].positionOverride, loadableAssets[i].rotationOverride, Vector3.one);
-                        Gizmos.matrix = matrix;
-                        Gizmos.color = new Color(0, 255, 0, 0.7f);
+                    Gizmos.matrix = _matrix;
 
-                        //BUG: flickering??
-                        //Graphics.DrawMesh(CoordArrows, loadableAssets[i].positionOverride, loadableAssets[i].rotationOverride, TestMat, 0);
-
-                    }
-                    //visualize targets
-                    else
-                    {
-                        matrix = Matrix4x4.TRS(loadableAssets[i].transformTarget.position, loadableAssets[i].transformTarget.rotation, loadableAssets[i].transformTarget.localScale);
-                        Gizmos.matrix = matrix;
-                        Gizmos.color = new Color(255, 255, 0, 0.7f);
-
-                        //Graphics.DrawMeshNow(CoordArrows, loadableAssets[i].transformTarget.position, loadableAssets[i].transformTarget.rotation);
-                    }
+                    Gizmos.color = loadableAssets[i].transformTarget == null
+                        ? new Color(0, 255, 0, 0.7f)
+                        : new Color(255, 255, 0, 0.7f);
 
                     //fallback: gizmo with not holding the mesh material (graphics.drawmesh is actually buggy)
                     Gizmos.DrawMesh(CoordArrows, Vector3.zero, Quaternion.identity);
@@ -487,7 +489,7 @@ namespace Agent.AssetLoader
                 }
             }
         }
-        #endif
+#endif
     }
 }
 
