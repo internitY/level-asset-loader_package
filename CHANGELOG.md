@@ -4,11 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2020-09-25
+
+### Changed
+- addresables depedency to version 1.16.1. Loading/Unloading assets in edit mode seems to be fixed in this version
+
+### Fixed
+- compiler errors when building
+
+### Bugs
+- infrequently the unity editor lose the loaded-gameobject connection or could not properly safe it. Be attentive and destroy the unwanted loaded assets manually, if the asset loader does not switch to loaded state after loading in editor mode.
+
+### Added
+- loading/unloading assets in edit mode
+
 ## [0.1.6] - 2020-09-13
 
 ### Fixed
 - unload assets before exiting play mode to avoid warning messages of lost addressable.instances
-- fixed Quaternion To Matrix conversion fails when overrideRotation was 0,0,0
+- fixed Quaternion To Matrix conversion fails when overrideRotation was invalid float number
 
 ## [0.1.5] - 2020-09-12
 

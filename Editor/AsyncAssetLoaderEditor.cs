@@ -9,9 +9,9 @@ namespace Agent.AssetLoader
         private static AsyncAssetLoader _myTarget;
 
         //SceneView
-        private static Vector2 buttonSize = new Vector2(70, 30);
-        private static Color loadColor = new Color(0, 100, 0, 0.1f);
-        private static Color unloadColor = new Color(100, 0, 0, 0.1f);
+        private static readonly Vector2 buttonSize = new Vector2(70, 30);
+        private static readonly Color loadColor = new Color(0, 100, 0, 0.1f);
+        private static readonly Color unloadColor = new Color(100, 0, 0, 0.1f);
 
         #region unity loop
         private void OnEnable()
@@ -40,29 +40,22 @@ namespace Agent.AssetLoader
 
             //HANDLE INSPECTOR GUI BUTTONS
             EditorGUILayout.BeginHorizontal();
-            //this version checks for playing because loading/unloading ist not working properly in edit mode with adressables
-            if (Application.isPlaying)
+            if (GUILayout.Button("Load All"))
             {
-                if (GUILayout.Button("Load All"))
-                {
-                    _myTarget.LoadAllAssets();
-                }
+                _myTarget.LoadAllAssets();
+            }
 
-                if (GUILayout.Button("Unload All"))
-                {
-                    _myTarget.UnloadAllAssets();
-                }
+            if (GUILayout.Button("Unload All"))
+            {
+                _myTarget.UnloadAllAssets();
             }
             EditorGUILayout.EndHorizontal();
 
 
             EditorGUILayout.BeginHorizontal();
-            if (Application.isPlaying)
+            if (GUILayout.Button("Refresh Asset Data"))
             {
-                if (GUILayout.Button("Refresh Asset Data"))
-                {
-                    _myTarget.RefreshAssetData();
-                }
+                _myTarget.RefreshAssetData();
             }
             EditorGUILayout.EndHorizontal();
 
@@ -101,16 +94,8 @@ namespace Agent.AssetLoader
                     GUI.contentColor = Color.black;
                     if (GUI.Button(new Rect(buttonPos1, buttonSize), "Load!"))
                     {
-                        //this version checks for playing because loading/unloading ist not working properly in edit mode with adressables
-                        if (!Application.isPlaying)
-                        {
-                            Debug.LogWarning("LOADING Assets rejected. Actually this Loading/Unloading is not working properly in Edit Mode with Addressables.");
-                        }
-                        else
-                        {
-                            _myTarget.LoadAllAssets();
-                            Debug.Log("LOADING Assets called.");
-                        }
+                        _myTarget.LoadAllAssets();
+                        Debug.Log("LOADING Assets called.");
                     }
                 }
                 else
@@ -119,16 +104,7 @@ namespace Agent.AssetLoader
                     GUI.contentColor = Color.black;
                     if (GUI.Button(new Rect(buttonPos1, buttonSize), "Unload!"))
                     {
-                        //this version checks for playing because loading/unloading ist not working properly in edit mode with adressables
-                        if (!Application.isPlaying)
-                        {
-                            Debug.LogWarning("UNLOADING Assets rejected. Actually this Loading/Unloading is not working properly in Edit Mode with Addressables.");
-                        }
-                        else
-                        {
-                            _myTarget.UnloadAllAssets();
-                            Debug.Log("UNLOADING Assets called.");
-                        }
+                        _myTarget.UnloadAllAssets();
                     }
                 }
             }

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using UnityEditor;
+//using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -45,12 +45,14 @@ namespace Agent.AssetLoader
             public Quaternion targetedRotation;
         }
 
+        #if UNITY_EDITOR
         [Header("DEBUG")]
         [SerializeField] private bool enableDebug = false;
         [SerializeField] private bool enableHelperGUI = false;
         [SerializeField] private bool enableDeepDebug = false;
 
         private Mesh coordMesh = null;
+        
         public Mesh CoordArrows
         {
             private set => coordMesh = value;
@@ -58,7 +60,7 @@ namespace Agent.AssetLoader
             {
                 if (coordMesh == null)
                 {
-                    coordMesh = (Mesh)AssetDatabase.LoadAssetAtPath("Packages/com.level.loader/Assets/coord arrows.FBX", typeof(Mesh));
+                    coordMesh = (Mesh)UnityEditor.AssetDatabase.LoadAssetAtPath("Packages/com.level.loader/Assets/coord arrows.FBX", typeof(Mesh));
 
                     if (enableDeepDebug)
                         Debug.Log("gizmo mesh found: " + coordMesh.name);
@@ -67,11 +69,12 @@ namespace Agent.AssetLoader
                 return coordMesh;
             }
         }
+        #endif
 
         //to be continue
         //public Material TestMat;
 
-        #endregion
+#endregion
 
         #region unity loop
         private void Awake()
@@ -81,17 +84,19 @@ namespace Agent.AssetLoader
 
         private void Start()
         {
-            CoordArrows = (Mesh)AssetDatabase.LoadAssetAtPath("Packages/com.level.loader/Assets/coord arrows.FBX", typeof(Mesh));
+            #if UNITY_EDITOR
+            CoordArrows = (Mesh)UnityEditor.AssetDatabase.LoadAssetAtPath("Packages/com.level.loader/Assets/coord arrows.FBX", typeof(Mesh));
+            #endif
         }
 
         private void OnEnable()
         {
             UnloadAllAssets();
 
-#if UNITY_EDITOR
+            #if UNITY_EDITOR
             //subscribe play mode checker to unload before exiting play mode to avoid warning
-            EditorApplication.playModeStateChanged += state => LogPlayModeState(state, this);
-#endif
+            UnityEditor.EditorApplication.playModeStateChanged += state => LogPlayModeState(state, this);
+            #endif
         }
 
         private void OnDisable()
@@ -184,8 +189,10 @@ namespace Agent.AssetLoader
                     return;
                 }
 
+                #if UNITY_EDITOR
                 if (enableDeepDebug)
                     Debug.Log("Load asset called for: " + _assetData.assetRef.editorAsset.gameObject.transform.name);
+                #endif
 
                 //check if this asset is already loaded
                 if (!AssetIsCurrentlyLoaded(_assetData.assetRef))
@@ -204,8 +211,10 @@ namespace Agent.AssetLoader
                 }
                 else
                 {
+                    #if UNITY_EDITOR
                     if (enableDebug)
                         Debug.LogWarning("asset >" + _assetData.assetRef.editorAsset.gameObject.transform.name + "< is currently loaded");
+                    #endif
                 }
             }
         }
@@ -248,7 +257,7 @@ namespace Agent.AssetLoader
         public virtual void OnLoadingDone()
         {
             if (enableDeepDebug)
-                Debug.Log("OnLoadingDone() called.");
+                Debug.Log("OnLoadingDone() called by instance: " + transform.name);
         }
         #endregion
 
@@ -290,19 +299,19 @@ namespace Agent.AssetLoader
         /// </summary>
         public virtual void OnUnloadingDone()
         {
-            if(enableDeepDebug)
-                Debug.Log("OnUnloadingDone() called.");
+            if(enableDebug)
+                Debug.Log("OnUnloadingDone() called by instance: " + transform.name);
         }
         #endregion
 
         #region helpers
         /// <summary>
-        /// Return alls currently loaded Assets. This can be null, if no asset is loaded.
+        /// Returns all currently loaded Assets. This can be null, if no asset is loaded.
         /// </summary>
         private LoadReference[] GetCurrentLoadedAssets => currentlyLoadedInstances.ToArray();
 
         /// <summary>
-        /// Return the first laoded asset by the asset reference.
+        /// Returns the first laoded asset by the asset reference.
         /// </summary>
         private LoadReference GetLoadedAsset(AssetReference assetRef)
         {
@@ -413,7 +422,7 @@ namespace Agent.AssetLoader
 
         #region bound casting methods
         /// <summary>
-        /// placeholder: Configuring a custom trigger collider to hide unitys box collider component.
+        /// future feature: Configuring a custom trigger collider to hide unitys box collider component.
         /// </summary>
         private void InitializeTriggerVolume()
         {
@@ -426,10 +435,10 @@ namespace Agent.AssetLoader
 
         #endregion
 
-#if UNITY_EDITOR
-        private static void LogPlayModeState(PlayModeStateChange state, AsyncAssetLoader loader)
+        #if UNITY_EDITOR
+        private static void LogPlayModeState(UnityEditor.PlayModeStateChange state, AsyncAssetLoader loader)
         {
-            if (state == PlayModeStateChange.ExitingPlayMode)
+            if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
             {
                 loader.UnloadAllAssets();
             }
@@ -489,7 +498,7 @@ namespace Agent.AssetLoader
                 }
             }
         }
-#endif
+        #endif
     }
 }
 
