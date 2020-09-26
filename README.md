@@ -5,7 +5,7 @@ This is a small asset loader by using Unitys addressables system and trigger met
 ## Table of Contents
 
 - [Installation](#Installation)
-- [How To](#How To)
+- [HowTo](#How To)
 - [Building](#Building)
 - [Values](#Values)
 - [License](#License)
