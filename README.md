@@ -5,7 +5,7 @@ This is a small asset loader by using Unitys addressables system and trigger met
 ## Table of Contents
 
 - [Installation](#Installation)
-- [HowTo](#How To)
+- [How To](#How To)
 - [Building](#Building)
 - [Values](#Values)
 - [License](#License)
@@ -21,7 +21,7 @@ Dependencies:
 - Addressables 1.16.1
 
 ## How To
-
+Follow these steps:
 - Add an asset loader gameobject to your scene by using the menu "GameObject/AssetLoader/Create.." or add the AsyncAssetLoader component to an existing gameobject.
 - Adjust the boundaries of the box collider and the collidable layer value to define where and who is triggering the loading/unloading process.
 - Mark the prefabs you want to use as Addressable inside your asset folder (Project Window).
