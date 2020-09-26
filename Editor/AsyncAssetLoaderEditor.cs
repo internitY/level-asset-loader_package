@@ -9,7 +9,7 @@ namespace Agent.AssetLoader
         private static AsyncAssetLoader _myTarget;
 
         //SceneView
-        private static readonly Vector2 buttonSize = new Vector2(70, 30);
+        private static readonly Vector2 buttonSize = new Vector2(55, 30);
         private static readonly Color loadColor = new Color(0, 100, 0, 0.1f);
         private static readonly Color unloadColor = new Color(100, 0, 0, 0.1f);
 
@@ -115,7 +115,7 @@ namespace Agent.AssetLoader
         /// <summary>
         /// This Method is linked to the Unity Menu to create a new Asset Loader.
         /// </summary>
-        [MenuItem("GameObject/AssetLoader/Create..", false, 1)]
+        [MenuItem("GameObject/AssetLoader/Create..", false, 50)]
         public static void CreateLoader()
         {
             Debug.Log("Creating a level loader..");

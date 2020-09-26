@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-//using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -19,9 +18,10 @@ namespace Agent.AssetLoader
         /// https://docs.unity3d.com/ScriptReference/MonoBehaviour.OnTriggerEnter.html
         /// https://docs.unity3d.com/Manual/LayerBasedCollision.html
         /// </summary>
-        [Tooltip("Colliders/Rigidbodies with this Layer triggers asset loading. Make sure this is possible by the physics matix in your project settings.")]
+        [Tooltip("Colliders/Rigidbodies with this Layer triggers asset loading/unloading. Make sure this is possible by the physics matix in your project settings.")]
         [SerializeField] private LayerMask collidableLayers = 0;
         [Space(5)]
+        [Tooltip("If this is true, collidables can unload by existing the trigger volume.")]
         [SerializeField] private bool unloadWhenTriggerExit;
         public bool UnloadWhenTriggerExit
         {
@@ -30,27 +30,21 @@ namespace Agent.AssetLoader
         }
 
         [Header("ASSETS TO LOAD")]
+        [Tooltip("List of Assets that will be loaded.")]
         [SerializeField] private List<AssetData> loadableAssets = new List<AssetData>();
         [Space(20)]
+        [Tooltip("List of currently loaded assets.")]
         [SerializeField] private List<LoadReference> currentlyLoadedInstances = new List<LoadReference>();
 
-        [System.Serializable]
-        public struct LoadReference
-        {
-            public AssetReference assetReference;
-            public GameObject instance;
-            public Transform targetedParent;
-            public Transform targetedTransform;
-            public Vector3 targetedPosition;
-            public Quaternion targetedRotation;
-        }
-
-        #if UNITY_EDITOR
         [Header("DEBUG")]
+        [Tooltip("Enables/Disables simple Debug Messages.")]
         [SerializeField] private bool enableDebug = false;
+        [Tooltip("Show/Hide the GUI coordination helper (yellow = transform target, green = pos and rot override).")]
         [SerializeField] private bool enableHelperGUI = false;
+        [Tooltip("Enables/Disables more specific Debug Messages.")]
         [SerializeField] private bool enableDeepDebug = false;
 
+            #if UNITY_EDITOR
         private Mesh coordMesh = null;
         
         public Mesh CoordArrows
@@ -69,12 +63,9 @@ namespace Agent.AssetLoader
                 return coordMesh;
             }
         }
-        #endif
+            #endif
 
-        //to be continue
-        //public Material TestMat;
-
-#endregion
+        #endregion
 
         #region unity loop
         private void Awake()
@@ -185,8 +176,8 @@ namespace Agent.AssetLoader
                 if (_assetData.assetRef == null)
                 {
                     if (enableDebug)
-                        Debug.LogError("Tried to load asset wihtout addressable reference.");
-                    return;
+                        Debug.LogError("Addressable reference is null.");
+                    continue;
                 }
 
                 #if UNITY_EDITOR
@@ -207,7 +198,8 @@ namespace Agent.AssetLoader
                         : _assetData.transformTarget.rotation;
 
                     //instantiate addressable
-                    Addressables.InstantiateAsync(_assetData.assetRef, pos, rot, _assetData.parentTarget).Completed += obj => InstantiateAssetIsDone(obj, _assetData);
+                        Addressables.InstantiateAsync(_assetData.assetRef, pos, rot, _assetData.parentTarget).Completed
+                            += obj => InstantiateAssetIsDone(obj, _assetData);
                 }
                 else
                 {
@@ -217,6 +209,9 @@ namespace Agent.AssetLoader
                     #endif
                 }
             }
+
+            //public callback
+            OnLoadingDone();
         }
 
         private void InstantiateAssetIsDone(AsyncOperationHandle<GameObject> _obj, AssetData _data)
@@ -234,19 +229,18 @@ namespace Agent.AssetLoader
 
                 if (_obj.Result != null)
                 {
-                    LoadReference reference;
-                    reference.instance = _obj.Result;
-                    reference.assetReference = _data.assetRef;
-                    reference.targetedTransform = _data.transformTarget;
-                    reference.targetedPosition = _data.positionOverride;
-                    reference.targetedRotation = _data.rotationOverride;
-                    reference.targetedParent = _data.parentTarget;
+                    LoadReference reference = new LoadReference
+                    {
+                        instance = _obj.Result,
+                        assetReference = _data.assetRef,
+                        targetedTransform = _data.transformTarget,
+                        targetedPosition = _data.positionOverride,
+                        targetedRotation = _data.rotationOverride,
+                        targetedParent = _data.parentTarget
+                    };
 
                     //add the reference to current loaded assets
                     currentlyLoadedInstances.Add(reference);
-
-                    //public callback
-                    OnLoadingDone();
                 }
             }
         }
@@ -256,7 +250,7 @@ namespace Agent.AssetLoader
         /// </summary>
         public virtual void OnLoadingDone()
         {
-            if (enableDeepDebug)
+            if (enableDebug)
                 Debug.Log("OnLoadingDone() called by instance: " + transform.name);
         }
         #endregion
@@ -282,6 +276,8 @@ namespace Agent.AssetLoader
             {
                 if (currentlyLoadedInstances != null)
                 {
+                    Debug.Log("asset unloading: " + currentlyLoadedInstances[i].instance.transform.name);
+
                     //Release Assets
                     Addressables.ReleaseInstance(currentlyLoadedInstances[i].instance);
                 }

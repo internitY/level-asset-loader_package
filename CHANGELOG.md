@@ -4,7 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2020-09-26
+
+### Added
+- README file: general informations about values and how to us the asset loader
+- License file: MIT license
+
+### Fixed
+- unity editor/standalone compiling errors
+
+### Changed
+- unity editor compatibility to 2019.4.11f1 LTS
+- package description
+
 ## [0.1.7] - 2020-09-25
+
+### Added
+- loading/unloading assets in edit mode
 
 ### Changed
 - addresables depedency to version 1.16.1. Loading/Unloading assets in edit mode seems to be fixed in this version
@@ -14,9 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bugs
 - infrequently the unity editor lose the loaded-gameobject connection or could not properly safe it. Be attentive and destroy the unwanted loaded assets manually, if the asset loader does not switch to loaded state after loading in editor mode.
-
-### Added
-- loading/unloading assets in edit mode
 
 ## [0.1.6] - 2020-09-13
 
