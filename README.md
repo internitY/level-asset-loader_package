@@ -5,8 +5,8 @@ This is a small asset loader by using Unitys addressables system and trigger met
 ## Table of Contents
 
 - [Installation](#Installation)
-- [How to](#How to)
-- [Building Requirements](#Building the Game)
+- [How To](#How To)
+- [Building](#Building)
 - [Values](#Values)
 - [License](#License)
 - [Contact](#Contact)
@@ -20,7 +20,7 @@ Dependencies:
 - Unity Physics 1.0.0
 - Addressables 1.16.1
 
-## How to
+## How To
 
 - Add an asset loader gameobject to your scene by using the menu "GameObject/AssetLoader/Create.." or add the AsyncAssetLoader component to an existing gameobject.
 - Adjust the boundaries of the box collider and the collidable layer value to define where and who is triggering the loading/unloading process.
@@ -31,7 +31,8 @@ Dependencies:
 - You can preview the loading and unloading process by pressing the "Load!" or "Unload!" scene view button or click the "Load All" or "Unload All" button inside the component in inspector. Changing the transform target while the asset is loaded, will not result in a position and rotation change of the loaded asset. Therefore you have to click the "Refresh Asset Data" button inside the component after adjusting the transform target. Enabling helper GUI at the debug section can help to evaluate the transform target or the override position and rotation.
 - OnLoadingDone() or OnUnloadingDone() can be overwritten to implement some own code. Notice: OnLoadingDone() and OnUnloadingDone() gets only called once and does currently not check if the loading or unloading process was successfully done by the addressable system.
 
-## Building the Game
+## Building
+If you build your game, keep in mind:
 Addressables works only with builded content. It will get an empty addressable reference, if your asset was not built. Be sure to build your content before building.
 **See also:** https://docs.unity3d.com/Packages/com.unity.addressables@0.7/manual/AddressableAssetsGettingStarted.html
 
